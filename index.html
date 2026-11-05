@@ -369,7 +369,7 @@
 // ─────────────────────────────────────────────
 //  API KEY MANAGEMENT
 // ─────────────────────────────────────────────
-const GROQ_MODEL = 'llama3-8b-8192';
+const GROQ_MODEL = 'openai/gpt-oss-20b';
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
 
 let groqApiKey = localStorage.getItem('makan_groq_key') || '';
@@ -459,6 +459,12 @@ async function askGroq(userText) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err?.error?.message || `HTTP ${res.status}`;
+    console.error('Groq raw error:', err);
+    // Helpful hint for decommissioned models
+    if (msg.includes('does not exist') || msg.includes('decommissioned') || res.status === 404) {
+      chatHistory.pop();
+      throw new Error(`${msg} - Model ${GROQ_MODEL} may be decommissioned. Try openai/gpt-oss-20b, openai/gpt-oss-120b, or qwen/qwen3-32b. Check https://console.groq.com/docs/models`);
+    }
     chatHistory.pop(); // remove failed turn
     throw new Error(msg);
   }
